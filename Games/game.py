@@ -2,6 +2,7 @@ from graphics import *
 from time import *
 from player import *
 
+#git practice change
 windowX = int(1000)
 windowY = int(1000)
 used_letters = []
