@@ -45,14 +45,11 @@ def wordTiles(window, current_word, state, player_input, hidden_word): # Functio
                     temp_word = rebuildDisplay(update_word)
                     hidden_word.set_hidden_word(temp_word)
         else:
-            print(current_word)
-            print("player input: " + player_input)
             if player_input.lower().strip() == current_word.lower().strip():
                 temp_word = current_word
                 hidden_word.set_hidden_word(temp_word)
             else:
                 print("Enter single characters or whole words inside wordtiles")
-                print(current_word)
 
     return hidden_word.get_hidden_word().strip()
 
@@ -92,8 +89,17 @@ def usedLetters(window, player_input): #Function to check if letter has already 
 
 def gameWin(current_word, hidden_word): #Function to check if word has been completed
     winner = False
+    current = ""
+    print(current_word)
     if current_word.lower().strip() == hidden_word.lower().strip():
         winner = True
+    else:
+        for i in range(len(current_word)):
+            if current_word[i] != " ":
+                current += current_word[i]
+       
+        if current.lower().strip() == hidden_word.lower().strip():
+            winner = True
     
     return winner
 
@@ -112,20 +118,24 @@ def gameloop(background, window): # Function for main game loop
     stage_names = ["Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7"]
 
     while len(game_words) > word_index:
+        print("outer while game loop")
+        print(word_index)
+        win = False
         current_word = game_words[word_index]
         current_hidden = wordTiles(window, current_word, "new state", "", hidden_word)
         fixed_word = fixCurrentWord(current_word)
         draw_word = displayWordTiles(window, current_hidden)
         entry_box = playerInputBox(window, len(current_word))
 
-        while current_tries <= 7:
+        while current_tries <= 7 and win == False:
+            print("inside while for current tries")
             win = gameWin(fixed_word, hidden_word.get_hidden_word())
             if win == True:
                 print("Game Won Next Word.")
                 draw_word.undraw()
                 used_letters.clear()
-                word_index + 1
                 current_tries = 0
+                backgrounds("new game", window, background)
                 break
             mouse = window.getMouse() # wait for mouse click so player can enter answer
             xcoord = mouse.getX()
@@ -146,7 +156,7 @@ def gameloop(background, window): # Function for main game loop
                     entry_box.setText("")
                     backgrounds(stage_names[current_tries], window, background)
                     current_tries += 1
-        word_index + 1
+        word_index += 1
 
 def createWindow(): #Create main window
     window = GraphWin("Game Window", windowX, windowY)
@@ -212,5 +222,4 @@ def getWords(filedata): #Function to get the words from a file that will be used
         words.append(choosenWord)
 
     return words
-
 main()
