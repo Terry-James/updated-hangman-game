@@ -6,6 +6,7 @@ from player import *
 windowX = int(1000)
 windowY = int(1000)
 used_letters = []
+alphabet = {}
 
 class HiddenWord:
     def __init__(self):
@@ -79,18 +80,20 @@ def checkInput(current_word, player_input): #Function for check if the character
 
 def usedLetters(window, player_input): #Function to check if letter has already been used
     used_before = False
+    letters_used = ""
     if len(player_input) == 1:
         if player_input not in used_letters:
             used_letters.append(player_input)
+            this_letter = alphabet[player_input.upper()]
+            this_letter.undraw()
         else:
             used_before = True
     
-    return used_before
+    return [used_before, letters_used]
 
 def gameWin(current_word, hidden_word): #Function to check if word has been completed
     winner = False
     current = ""
-    print(current_word)
     if current_word.lower().strip() == hidden_word.lower().strip():
         winner = True
     else:
@@ -118,8 +121,6 @@ def gameloop(background, window): # Function for main game loop
     stage_names = ["Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7"]
 
     while len(game_words) > word_index:
-        print("outer while game loop")
-        print(word_index)
         win = False
         current_word = game_words[word_index]
         current_hidden = wordTiles(window, current_word, "new state", "", hidden_word)
@@ -127,8 +128,7 @@ def gameloop(background, window): # Function for main game loop
         draw_word = displayWordTiles(window, current_hidden)
         entry_box = playerInputBox(window, len(current_word))
 
-        while current_tries <= 7 and win == False:
-            print("inside while for current tries")
+        while current_tries <= 5 and win == False:
             win = gameWin(fixed_word, hidden_word.get_hidden_word())
             if win == True:
                 print("Game Won Next Word.")
@@ -136,13 +136,22 @@ def gameloop(background, window): # Function for main game loop
                 used_letters.clear()
                 current_tries = 0
                 backgrounds("new game", window, background)
+                createAlphabet(window)
+                break
+            elif win == False and current_tries >= 5:
+                print("Game lose")
+                draw_word.undraw()
+                used_letters.clear()
+                current_tries = 0
+                backgrounds("new game", window, background)
+                createAlphabet(window)
                 break
             mouse = window.getMouse() # wait for mouse click so player can enter answer
             xcoord = mouse.getX()
             ycoord = mouse.getY()
             if ((625 <= xcoord <= 684) and (540 <= ycoord <= 559)):
                 player_input = entry_box.getText()
-                used_result = usedLetters(window, player_input)# check if letter in entry has already been used
+                used_result, letters_used = usedLetters(window, player_input)# check if letter in entry has already been used
                 if used_result == True: # start the loop over if true since the letter entered has already been used
                     entry_box.setText("")
                     continue
@@ -151,11 +160,13 @@ def gameloop(background, window): # Function for main game loop
                     entry_box.setText("")
                     current_hidden = wordTiles(window, current_word, "", player_input, hidden_word)
                     draw_word.undraw()
-                    draw_word = displayWordTiles(window, current_hidden) 
+                    draw_word = displayWordTiles(window, current_hidden)
+                    sleep(.5) 
                 else:
                     entry_box.setText("")
                     backgrounds(stage_names[current_tries], window, background)
                     current_tries += 1
+                    sleep(.5)
         word_index += 1
 
 def createWindow(): #Create main window
@@ -205,10 +216,20 @@ def playerInputBox(window, word_length): #Function for creating input box for pl
 
 def createAlphabet(window): #Function to set the starting alphabet
     alpha = ['A','B','C','D','E','F','G','H','I','J','K',
-            'L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','','']
-    for i in range (len(alpha) - 1):
+            'L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+    reset(window, alpha)
+    for i in range (len(alpha)):
         singleLetter = Text(Point((windowX/2 - 200) + (i*15), windowY/2 + 100), alpha[i])
         singleLetter.draw(window)
+        alphabet.update({alpha[i] : singleLetter})
+
+def reset(window, letters):
+    try:
+        for letter in letters:
+            this_letter = alphabet[letter.upper()]
+            this_letter.undraw()
+    except:
+        print("nothing to undraw.")
 
 def getWords(filedata): #Function to get the words from a file that will be used in the game
     words = []
