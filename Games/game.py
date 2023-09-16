@@ -2,11 +2,11 @@ from graphics import *
 from time import *
 from player import *
 
-#git practice change
 windowX = int(1000)
 windowY = int(1000)
 used_letters = []
 alphabet = {}
+scoring = {}
 
 class HiddenWord:
     def __init__(self):
@@ -115,6 +115,7 @@ def fixCurrentWord(current_word): #Function to get the format for the current wo
 def gameloop(background, window): # Function for main game loop
     hidden_word = HiddenWord()
     player = Player()
+    createPlayerStats(window, player)
     game_words = getWords("Hangman.txt") # Returns an array of words
     current_tries = 0
     word_index = 0
@@ -132,17 +133,21 @@ def gameloop(background, window): # Function for main game loop
             win = gameWin(fixed_word, hidden_word.get_hidden_word())
             if win == True:
                 print("Game Won Next Word.")
+                player.update_correct_word()
                 draw_word.undraw()
                 used_letters.clear()
                 current_tries = 0
+                createPlayerStats(window, player)
                 backgrounds("new game", window, background)
                 createAlphabet(window)
                 break
             elif win == False and current_tries >= 5:
                 print("Game lose")
+                player.update_incorrect_word()
                 draw_word.undraw()
                 used_letters.clear()
                 current_tries = 0
+                createPlayerStats(window, player)
                 backgrounds("new game", window, background)
                 createAlphabet(window)
                 break
@@ -214,6 +219,24 @@ def playerInputBox(window, word_length): #Function for creating input box for pl
 
     return input_box
 
+def createPlayerStats(window, this_player):
+    if len(scoring) > 0:
+        this_correct = scoring["correct"]
+        this_correct.undraw()
+        this_incorrect = scoring["incorrect"]
+        this_incorrect.undraw()
+
+    correct_label = Text(Point((windowX/2 - 400), windowY/2 - 400), "Words Correct:")
+    correct_label.draw(window)
+    player_correct = Text(Point((windowX/2 - 325), windowY/2 - 400), this_player.get_words_correct())
+    player_correct.draw(window)
+    incorrect_label = Text(Point((windowX/2 - 400), windowY/2 - 350), "Words Incorrect:")
+    incorrect_label.draw(window)
+    player_incorrect = Text(Point((windowX/2 - 325), windowY/2 - 350), this_player.get_words_incorrect())
+    player_incorrect.draw(window)
+
+    scoring.update({"correct" : player_correct, "incorrect" : player_incorrect})
+
 def createAlphabet(window): #Function to set the starting alphabet
     alpha = ['A','B','C','D','E','F','G','H','I','J','K',
             'L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
@@ -223,7 +246,7 @@ def createAlphabet(window): #Function to set the starting alphabet
         singleLetter.draw(window)
         alphabet.update({alpha[i] : singleLetter})
 
-def reset(window, letters):
+def reset(window, letters): #Function resets the letters back to origianal unused state
     try:
         for letter in letters:
             this_letter = alphabet[letter.upper()]
@@ -244,3 +267,10 @@ def getWords(filedata): #Function to get the words from a file that will be used
 
     return words
 main()
+
+""" TODO 
+Backlog
+1. undraw words correct and incorrect when updating score. Code is currently just redrawing a new image over top of the others.
+2. undraw Enter letter or word text when moving to new word. Code is currently just redrawing the text again when moving to a new word after refreshing all the images.
+3. add a guesses counter to show player how many tries it took to guess the current word.
+4. add a hint box so the player can click and get a hint for the current word. """
