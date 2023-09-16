@@ -14,3 +14,9 @@ class Player:
 
     def set_words_incorrect(self, words_incorrect):
         self.words_incorrect = words_incorrect
+
+    def update_correct_word(self):
+        self.words_correct += 1
+    
+    def update_incorrect_word(self):
+        self.words_incorrect += 1
