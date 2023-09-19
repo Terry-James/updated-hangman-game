@@ -7,6 +7,7 @@ windowY = int(1000)
 used_letters = []
 alphabet = {}
 scoring = {}
+drawing_locations = {}
 
 class HiddenWord:
     def __init__(self):
@@ -112,10 +113,16 @@ def fixCurrentWord(current_word): #Function to get the format for the current wo
         word += current_letter + " "
     return word
 
+def undrawInputFields():
+    drawing_locations["InputBox"].undraw()
+    drawing_locations["InputLabel"].undraw()
+    drawing_locations["SubmitButton"].undraw()
+    drawing_locations["SubmitLabel"].undraw()
+
 def gameloop(background, window): # Function for main game loop
     hidden_word = HiddenWord()
     player = Player()
-    createPlayerStats(window, player)
+    createPlayerStats(window, player, "")
     game_words = getWords("Hangman.txt") # Returns an array of words
     current_tries = 0
     word_index = 0
@@ -127,7 +134,8 @@ def gameloop(background, window): # Function for main game loop
         current_hidden = wordTiles(window, current_word, "new state", "", hidden_word)
         fixed_word = fixCurrentWord(current_word)
         draw_word = displayWordTiles(window, current_hidden)
-        entry_box = playerInputBox(window, len(current_word))
+        #entry_box = playerInputBox(window, len(current_word))
+        playerInputBox(window, len(current_word))
 
         while current_tries <= 5 and win == False:
             win = gameWin(fixed_word, hidden_word.get_hidden_word())
@@ -135,9 +143,11 @@ def gameloop(background, window): # Function for main game loop
                 print("Game Won Next Word.")
                 player.update_correct_word()
                 draw_word.undraw()
+                undrawInputFields()
                 used_letters.clear()
                 current_tries = 0
-                createPlayerStats(window, player)
+                player.set_guess_counter(0)
+                createPlayerStats(window, player, "")
                 backgrounds("new game", window, background)
                 createAlphabet(window)
                 break
@@ -145,9 +155,11 @@ def gameloop(background, window): # Function for main game loop
                 print("Game lose")
                 player.update_incorrect_word()
                 draw_word.undraw()
+                undrawInputFields()
                 used_letters.clear()
                 current_tries = 0
-                createPlayerStats(window, player)
+                player.set_guess_counter(0)
+                createPlayerStats(window, player, "")
                 backgrounds("new game", window, background)
                 createAlphabet(window)
                 break
@@ -155,21 +167,26 @@ def gameloop(background, window): # Function for main game loop
             xcoord = mouse.getX()
             ycoord = mouse.getY()
             if ((625 <= xcoord <= 684) and (540 <= ycoord <= 559)):
-                player_input = entry_box.getText()
+                #player_input = entry_box.getText()
+                player_input = drawing_locations["InputBox"].getText()
                 used_result, letters_used = usedLetters(window, player_input)# check if letter in entry has already been used
                 if used_result == True: # start the loop over if true since the letter entered has already been used
-                    entry_box.setText("")
+                    drawing_locations["InputBox"].setText("")
                     continue
                 check_result = checkInput(current_word, player_input)
                 if check_result == True:
-                    entry_box.setText("")
+                    drawing_locations["InputBox"].setText("")
                     current_hidden = wordTiles(window, current_word, "", player_input, hidden_word)
                     draw_word.undraw()
+                    player.update_guess_counter()
+                    createPlayerStats(window, player, "counteronly")
                     draw_word = displayWordTiles(window, current_hidden)
                     sleep(.5) 
                 else:
-                    entry_box.setText("")
+                    drawing_locations["InputBox"].setText("")
                     backgrounds(stage_names[current_tries], window, background)
+                    player.update_guess_counter()
+                    createPlayerStats(window, player, "counteronly")
                     current_tries += 1
                     sleep(.5)
         word_index += 1
@@ -216,26 +233,50 @@ def playerInputBox(window, word_length): #Function for creating input box for pl
     submit_button.draw(window)
     submit_label = Text(Point(655, 550), "Submit")
     submit_label.draw(window)
+    drawing_locations.update({"InputLabel" : input_label, "InputBox" : input_box, "SubmitButton" : submit_button, "SubmitLabel" : submit_label})
+    
+    #return input_box
 
-    return input_box
-
-def createPlayerStats(window, this_player):
-    if len(scoring) > 0:
+def createPlayerStats(window, this_player, state):
+    if len(scoring) > 0 and state == "counteronly":
+        this_guessLabel = scoring["guesslabel"]
+        this_guessLabel.undraw()
+        this_guessCounter = scoring["guesscounter"]
+        this_guessCounter.undraw()
+    elif len(scoring) > 0 and state != "counteronly" :
         this_correct = scoring["correct"]
         this_correct.undraw()
         this_incorrect = scoring["incorrect"]
         this_incorrect.undraw()
+        this_correctLabel = scoring["correctlabel"]
+        this_correctLabel.undraw()
+        this_incorrectLabel = scoring["incorrectlabel"]
+        this_incorrectLabel.undraw()
+        this_guessLabel = scoring["guesslabel"]
+        this_guessLabel.undraw()
+        this_guessCounter = scoring["guesscounter"]
+        this_guessCounter.undraw()
 
-    correct_label = Text(Point((windowX/2 - 400), windowY/2 - 400), "Words Correct:")
-    correct_label.draw(window)
-    player_correct = Text(Point((windowX/2 - 325), windowY/2 - 400), this_player.get_words_correct())
-    player_correct.draw(window)
-    incorrect_label = Text(Point((windowX/2 - 400), windowY/2 - 350), "Words Incorrect:")
-    incorrect_label.draw(window)
-    player_incorrect = Text(Point((windowX/2 - 325), windowY/2 - 350), this_player.get_words_incorrect())
-    player_incorrect.draw(window)
-
-    scoring.update({"correct" : player_correct, "incorrect" : player_incorrect})
+    if state == "counteronly":
+        guess_counter_label = Text(Point((windowX/2 - 400), windowY/2 - 300), "Guess Counter:")
+        guess_counter_label.draw(window)
+        guess_counter = Text(Point((windowX/2 - 325), windowY/2 - 300), this_player.get_guess_counter())
+        guess_counter.draw(window)
+        scoring.update({"guesslabel" : guess_counter_label, "guesscounter" : guess_counter })
+    else:
+        correct_label = Text(Point((windowX/2 - 400), windowY/2 - 400), "Words Correct:")
+        correct_label.draw(window)
+        player_correct = Text(Point((windowX/2 - 325), windowY/2 - 400), this_player.get_words_correct())
+        player_correct.draw(window)
+        incorrect_label = Text(Point((windowX/2 - 400), windowY/2 - 350), "Words Incorrect:")
+        incorrect_label.draw(window)
+        player_incorrect = Text(Point((windowX/2 - 325), windowY/2 - 350), this_player.get_words_incorrect())
+        player_incorrect.draw(window)
+        guess_counter_label = Text(Point((windowX/2 - 400), windowY/2 - 300), "Guess Counter:")
+        guess_counter_label.draw(window)
+        guess_counter = Text(Point((windowX/2 - 325), windowY/2 - 300), this_player.get_guess_counter())
+        guess_counter.draw(window)
+        scoring.update({"correctlabel" : correct_label, "correct" : player_correct, "incorrectlabel" : incorrect_label , "incorrect" : player_incorrect, "guesslabel" : guess_counter_label, "guesscounter" : guess_counter })
 
 def createAlphabet(window): #Function to set the starting alphabet
     alpha = ['A','B','C','D','E','F','G','H','I','J','K',
@@ -270,7 +311,7 @@ main()
 
 """ TODO 
 Backlog
-1. undraw words correct and incorrect when updating score. Code is currently just redrawing a new image over top of the others.
-2. undraw Enter letter or word text when moving to new word. Code is currently just redrawing the text again when moving to a new word after refreshing all the images.
-3. add a guesses counter to show player how many tries it took to guess the current word.
-4. add a hint box so the player can click and get a hint for the current word. """
+X 1. undraw words correct and incorrect when updating score. Code is currently just redrawing a new image over top of the others.
+X 2. undraw Enter letter or word text when moving to new word. Code is currently just redrawing the text again when moving to a new word after refreshing all the images
+X 3. add a guesses counter to show player how many tries it took to guess the current word.
+  4. add a hint box so the player can click and get a hint for the current word. """
