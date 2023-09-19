@@ -2,6 +2,16 @@ class Player:
     def __init__(self):
         self.words_correct = 0
         self.words_incorrect = 0
+        self.guess_counter = 0
+
+    def get_guess_counter(self):
+        return self.guess_counter
+    
+    def set_guess_counter(self, counter):
+        self.guess_counter = counter
+
+    def update_guess_counter(self):
+        self.guess_counter += 1
 
     def get_words_correct(self):
         return self.words_correct
